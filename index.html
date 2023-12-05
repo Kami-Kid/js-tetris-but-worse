@@ -15,13 +15,24 @@
                 /*height: 100vh;
                 width: 100%;*/
             }
+            .feedback{
+                width: auto !important;
+            }
+            div{
+                width: 500px;
+            }
         </style>
         <title>Tetris</title>
     </head>
     <body>
         <Canvas id="Canvas"></Canvas>
+        <br>
+        <div>
+        <input type="range" min="0" max="2000" value="83" id="feedback">
+        </div>
         <h1 id="currKey"></h1>
         <script> const print = (msg) =>{console.log(msg)}; </script>
+        <script src="minos.js"></script>
         <script src="main.js"></script>
     </body>
 </html>

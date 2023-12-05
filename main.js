@@ -1,36 +1,39 @@
 const canvas = document.getElementById("Canvas")
 const context = canvas.getContext('2d');
 
+//note: minos are defined in a seperate file
+
 //graphics - 40x40 per square with 2px seperators
 //note - board is 10x20 squares
 
 const squareWidth = 40
 const sepWidth = 2
 
-let movementBuffer = ""
+let feedbackBuffer = false
+
+const feedbackSlider = document.getElementById("feedback")
+feedbackSlider.setAttribute("step", 1000/60)
+feedbackSlider.addEventListener("mousemove", ()=>{feedbackDelay = feedbackSlider.value})
+
+let feedbackDelay = feedbackSlider.value
+
+let movementBuffer = {}
 
 let score = 0 // need to look at documentation to copy the scoring system :P
 let level = 0 // this determines fall speed and increment every 10 clears 
 let lineClears = 0
 
-window.addEventListener("keydown", (e)=>{movementBuffer = e.key; document.getElementById("currKey").innerHTML=movementBuffer})
-window.addEventListener("keyup", (e)=>{movementBuffer = e.key == movementBuffer? "": movementBuffer; document.getElementById("currKey").innerHTML=movementBuffer})
+window.addEventListener("keydown", (e)=>{movementBuffer[e.key] = true; document.getElementById("currKey").innerHTML=feedbackBuffer})
+window.addEventListener("keyup", (e)=>{movementBuffer[e.key] = false; print(movementBuffer)})
 
-let board = ["1111110011"]  // 20 rows with 10 columns each with a 1 or 0 to represent if there is a filled block there
+let board = []  // 20 rows with 10 columns each with a 1 or 0 to represent if there is a filled block there
 
-for(i=0;i<16;i++){
+for(i=0;i<21;i++){
     board.push("0000000000")
 }
-board.push("1111111111")
+//board.push("1111111111")
 
 let currMino = null
-
-const LBlock = [
-    "1",
-    "1",
-    "1",
-    "1"
-]
 
 const screenWidth = 10*squareWidth + 9*sepWidth
 const screenHeight = 20*squareWidth + 19*sepWidth
@@ -86,18 +89,20 @@ String.prototype.replaceAt = function (idx, value){
     if(!Number.isInteger(idx)){
         throw Error("Not an integer")
     }
-    return this.slice(0,idx) + value + this.slice(idx)
+    return this.slice(0,idx) + value + this.slice(idx+1)
 }
 
 class tetromino{
-    constructor(x, shape, colour, y=20, pointOfRotation){
+    constructor(x, shape, colour, y=20){
         this.x=x
         this.y=y
         let rawshape = shape //will look like [0000,0000,0000,0000] where each entry is a row and each bit indicated whether there is a block there
         this.shape = this.parseShape(rawshape)
         this.colour = colour
         this.inplay = true
-        this.pointOfRotation = pointOfRotation
+        this.pointOfRotation = shape.pop()
+        this.invPointOfRotation = [-this.pointOfRotation[0], -this.pointOfRotation[1]]
+        setInterval(()=>{this.parseInput()}, feedbackDelay)
     }
     parseShape(rawshape){
         let temp = []
@@ -111,92 +116,176 @@ class tetromino{
         }
         return temp
     }
+
+    rotateShape(clockwise){
+        let currShape = this.shape
+        for(let i=0;i<currShape.length;i++){
+            currShape[i] = sumArrs(currShape[i], this.invPointOfRotation)
+            if(clockwise){
+                currShape[i] = [currShape[i][1],-1*currShape[i][0]]
+            }
+            else{
+                
+                currShape[i] = [-1*currShape[i][1],currShape[i][0]]
+            }
+
+            currShape[i] = sumArrs(currShape[i], this.pointOfRotation)
+        }
+        this.shape = currShape
+        
+    }
+
     drawSquare(square){
         let aligned = alignGrid(square)
         context.fillStyle=this.colour;
         
         context.fillRect(aligned[0], aligned[1], squareWidth,squareWidth);
-            
+        
     }
     checkCollisionDownSquare(square){
-
-        if(board[square[1]+1][square[0]] === "1" || square[1]>=19){ // check if the gridspace below it is filled
+        
+        if( square[1]>=19){ // check if the gridspace below it is filled
             //if so then add this to the board
-            print("collided")
+            print(this.shape)
+    
             this.solidify()
             this.inplay = false
-            
+            return
         }
         
+        if(board[square[1]+1][square[0]] === "1"){
+            
+            //if so then add this to the board
+            print(this.shape)
+    
+            this.solidify()
+            this.inplay = false
+            return
+        }
     }
     moveShapeDown(){
         if(!this.inplay){
             return
         }
-        this.y += 1
         for(let i=0;i<this.shape.length;i++){
             let square = sumArrs(this.shape[i], [this.x,this.y])
             this.checkCollisionDownSquare(square)
             
         }
+        this.y += 1
     }
+    checkCollisionSide(){
+        for(let i=0;i<this.shape.length;i++){
+            let squarex = this.x + this.shape[i][0]
+            let squarey = this.shape[i][1]+this.y
+            let square = [squarex,squarey]
+            
+            if(square[0] >= 9){
+                return 1
+            }
+            if(square[0] <= 0){
+                return -1
+            }
+            try{
+            if(board[square[1]][square[0]-1] === "1"){
+                if(square[0] == 0){
+                    debugger
+                }
+                return -1
+            }}
+            catch{
+                debugger
+            }
+            if(board[square[1]][square[0]+1] === "1"){
+                return 1
+            }
+            
+        }
+        return 0
+
+    }
+
     parseInput(){
-        if(!this.inplay){
-            return
+        if (movementBuffer["ArrowRight"]){ // TODO: rotation system
+            this.rotateShape(false)
         }
-        switch(movementBuffer){
-            case "d":
+        if (movementBuffer["ArrowLeft"]){
+            this.rotateShape(true)
+        }
+        if(movementBuffer["d"]){
+            if(this.checkCollisionSide() !== 1){
                 this.x += 1
-                break
-            case "a":
-                this.x -=1
-                break
-            case "s":  // soft drop
-                this.y += 1
-                break
-            case "ArrowRight":
-                //todo rotations
-                break
-            case "ArrowLeft":
-                break
-            case " ":  // hard drop
-                this.hardDrop()
-                break
+            }
         }
+        if (movementBuffer["a"]){
+            
+            if(this.checkCollisionSide() !== -1){
+                this.x -= 1
+            }
+            
+        }
+        if (movementBuffer["s"]){
+            this.moveShapeDown()
+            
+        }
+        if (movementBuffer[" "]){
+            this.hardDrop()
+        }
+
     }
     hardDrop(){
         while(this.inplay){
-            this.update()
+            this.moveShapeDown()
         }
     }
     update(){
         this.computeShapeActions()
-        this.parseInput()
     }
     solidify(){
         for(let i=0;i<this.shape.length;i++){
             let square = sumArrs(this.shape[i], [this.x,this.y])
-
-            board[square[1]] = board[square[1]].replaceAt(square[0], "1")
-            this.inplay = false
             
+            board[square[1]] = board[square[1]].replaceAt(square[0], "1")
+            drawCollided()   
+            
+            //board.forEach((x)=>{print(x)})
+            //print("===============")
         }
+        if(this.inplay){
+            currMino = createShape()
+        }
+        this.inplay = false
     }
     computeShapeActions(){
         for(let i=0;i<this.shape.length;i++){
             let square = sumArrs(this.shape[i], [this.x,this.y])
-
+            
             this.drawSquare(square)
-
             
         }
     }
 }
+    
+    function updateBoard(){
+        context.clearRect(0, 0, screenWidth, screenHeight);
+        drawGrid()
+        context.fillStyle = "#aaaaaa"
+        for(let i=0;i<board.length;i++){
+            for(let j=0;j<board[i].length;j++){
+                if(board[i][j] === "1"){
+                    //print(i>= 15?"yes":"")
+                let drawCoords = alignGrid([j,i]) 
+                context.fillRect(drawCoords[0],drawCoords[1],squareWidth,squareWidth);
+                
+            }
+        }
+    }
+    (()=>{currMino.update()})()
+}
 
-function updateBoard(){
-    context.clearRect(0, 0, screenWidth, screenHeight);
-    drawGrid()
-    context.fillStyle = "#aaaaaa"
+function drawCollided(){
+    context.fillStyle='#aaa';
+    
     for(let i=0;i<board.length;i++){
         for(let j=0;j<board[i].length;j++){
             if(board[i][j] === "1"){
@@ -207,13 +296,17 @@ function updateBoard(){
             }
         }
     }
-    (()=>{currMino.update()})()
+}
+
+function createShape(){
+    shapeIdx = Math.floor(Math.random()*tetrominos.length)  //gets a random number within the suitable range for an index
+    return new tetromino(5, tetrominos[shapeIdx], "blue", 0)
 }
 
 function run(){
     drawGrid()
 
-    currMino = new tetromino(5,LBlock,"blue",6)
+    currMino = createShape()
 
 
     //updateBoard()
