@@ -100,7 +100,7 @@ class tetromino{
         this.shape = this.parseShape(rawshape)
         this.colour = colour
         this.inplay = true
-        this.pointOfRotation = shape.pop()
+        this.pointOfRotation = shape.slice(-1)[0]
         this.invPointOfRotation = [-this.pointOfRotation[0], -this.pointOfRotation[1]]
         setInterval(()=>{this.parseInput()}, feedbackDelay)
     }
