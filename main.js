@@ -254,6 +254,12 @@ class tetromino{
         if(this.inplay){
             currMino = createShape()
         }
+        for(let i=0;i<board.length;i++){
+            if(board[i] == "1111111111"){
+                board.pop(i)
+                board.unshift("0000000000")
+            }
+        }
         this.inplay = false
     }
     computeShapeActions(){
