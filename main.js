@@ -104,13 +104,6 @@ class tetromino{
         this.pointOfRotation = shape.slice(-1)[0]
         this.invPointOfRotation = [-this.pointOfRotation[0], -this.pointOfRotation[1]]
         setInterval(()=>{this.parseInput()}, feedbackDelay)
-        
-        for(let i=0;i<board.length;i++){
-            if(board[i] == "1111111111"){
-                board.splice(i,1)
-                board.unshift("0000000000")
-            }
-        }
     }
     parseShape(rawshape){
         let temp = []
@@ -147,12 +140,15 @@ class tetromino{
             let focalPoint = (this.shapeSize - 1)/2  // this can be used for both x and y since its symetric
             let block = sumArrs(currShape[i], [-focalPoint,-focalPoint])
             
-            currShape[i] = sumArrs([-block[1], block[0]],[focalPoint,focalPoint])
+
+            currShape[i] = !clockwise? sumArrs([-block[1], block[0]],[focalPoint,focalPoint]) : sumArrs([block[1], -block[0]],[focalPoint,focalPoint])
             tempRaw[currShape[i][1]] = tempRaw[currShape[i][1]].replaceAt(currShape[i][0],"1")
         }
         this.shape = currShape
        
     }
+
+    checkRotateCollision
 
     drawSquare(square){
         let aligned = alignGrid(square)
@@ -253,16 +249,16 @@ class tetromino{
         this.computeShapeActions()
     }
     solidify(){
-        for(let i=0;i<this.shape.length;i++){
-            let square = sumArrs(this.shape[i], [this.x,this.y])
-           
-            board[square[1]] = board[square[1]].replaceAt(square[0], "1")
-            drawCollided()  
-           
-            //board.forEach((x)=>{print(x)})
-            //print("===============")
-        }
         if(this.inplay){
+            for(let i=0;i<this.shape.length;i++){
+                let square = sumArrs(this.shape[i], [this.x,this.y])
+            
+                board[square[1]] = board[square[1]].replaceAt(square[0], "1")
+                drawCollided()  
+            
+                //board.forEach((x)=>{print(x)})
+                //print("===============")
+            }
             currMino = createShape()
         }
         this.inplay = false
@@ -309,7 +305,17 @@ function drawCollided(){
     }
 }
 
+
 function createShape(){
+    
+        
+    for(let i=0;i<board.length;i++){
+        if(board[i] == "1111111111"){
+            board.splice(i,1)
+            board.unshift("0000000000")
+        }
+    }
+
     shapeIdx = Math.floor(Math.random()*tetrominos.length)  //gets a random number within the suitable range for an index
     return new tetromino(5, tetrominos[shapeIdx], "blue", 0)
 }
