@@ -1,6 +1,10 @@
 const canvas = document.getElementById("Canvas")
 const context = canvas.getContext('2d');
 
+const queueCanv = document.getElementById("queue")
+
+const queueContext = queueCanv.getContext('2d');
+
 //note: minos are defined in a seperate file
 
 //graphics - 40x40 per square with 2px seperators
@@ -92,9 +96,13 @@ String.prototype.replaceAt = function (idx, value){
     return this.slice(0,idx) + value + this.slice(idx+1)
 }
 
+
+
 class tetromino{
     constructor(x, shape, colour, y=20){
         this.x=x
+        this.canHard = false
+        setTimeout(()=>{this.canHard = true}, 300)
         this.y=y
         let rawshape = shape //will look like [0000,0000,0000,0000] where each entry is a row and each bit indicated whether there is a block there
         this.shapeSize = Math.max(rawshape.length,rawshape[0].length)
@@ -145,10 +153,27 @@ class tetromino{
             tempRaw[currShape[i][1]] = tempRaw[currShape[i][1]].replaceAt(currShape[i][0],"1")
         }
         this.shape = currShape
+        if(this.checkRotateCollision()){
+            this.rotateShape(!clockwise)
+        }
        
     }
 
-    checkRotateCollision
+    checkRotateCollision(){
+        // return true when collides
+        for(let i=0;i<this.shape.length;i++){
+            let square = sumArrs(this.shape[i],[this.x,this.y])
+            if(square[0] > 10 || square[0] < 0){
+                return 1
+            }
+            if(board[square[1]][square[0]] == "1"){
+                return 1
+            }
+            if(square[1] > 20){
+                return 1
+            }
+        }
+    }
 
     drawSquare(square){
         let aligned = alignGrid(square)
@@ -203,7 +228,7 @@ class tetromino{
             if(board[squarey][squarex-2] === "1"){
                 return -1
             }
-            if(board[squarey][squarex+1] === "1"){
+            if(board[squarey][squarex] === "1"){
                 return 1
             }
            
@@ -213,7 +238,7 @@ class tetromino{
     }
 
     parseInput(){
-        if (movementBuffer["ArrowRight"]){ // TODO: rotation system
+        if (movementBuffer["ArrowRight"]){
             this.rotateShape(false)
         }
         if (movementBuffer["ArrowLeft"]){
@@ -225,6 +250,8 @@ class tetromino{
             }
         }
         if (movementBuffer["a"]){
+
+            print("a")
            
             if(this.checkCollisionSide() !== -1){
                 this.x -= 1
@@ -241,6 +268,9 @@ class tetromino{
 
     }
     hardDrop(){
+        if(!this.canHard){
+            return
+        }
         while(this.inplay){
             this.moveShapeDown()
         }
