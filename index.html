@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <script> const print = (msg) =>{console.log(msg)}; </script>
         <style>
             *{
                 padding: 0%;
@@ -32,7 +33,7 @@
         <input type="range" min="0" max="2000" value="83" id="feedback">
         </div>
         <h1 id="currKey"></h1>
-        <script> const print = (msg) =>{console.log(msg)}; </script>
+        <button id="bagMaking" onclick="bagTypeBuffer=!bagTypeBuffer; this.innerHTML = ['Mega Bag or Split Bags : ',bagTypeBuffer?'Mega':'Split'].join('');">Mega Bag or Split Bags : Split</button>
         <script src="minos.js"></script>
         <script src="main.js"></script>
     </body>

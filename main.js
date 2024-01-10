@@ -17,6 +17,36 @@ const sepWidth = 2
 
 let feedbackBuffer = false
 
+let bagTypeBuffer = 0
+let bagType = 0  //0: single bags, 1: mega bag
+let subBag = 0
+
+let megaBag = [].concat(allMinos)
+let splitBag = [[],[],[]]
+
+function generateBags(){
+    
+    if(bagType){
+        megaBag = [].concat(allMinos)
+    }
+    else{
+        let firstNum = Math.floor(Math.random()*3)
+        splitBag[0].push(...[tetrominos,pentominos,oddBalls][firstNum])
+        let secondNum = Math.floor(Math.random()*3)
+        while (secondNum === firstNum){
+            secondNum = Math.floor(Math.random()*3)
+        }
+        splitBag[1].push(...[tetrominos,pentominos,oddBalls][secondNum])
+        splitBag[2].push(...[tetrominos,pentominos,oddBalls][3-(secondNum+firstNum)])
+
+
+
+    }
+
+    bagType = bagTypeBuffer
+
+}
+
 const feedbackSlider = document.getElementById("feedback")
 feedbackSlider.setAttribute("step", 1000/60)
 feedbackSlider.addEventListener("mousemove", ()=>{feedbackDelay = feedbackSlider.value})
@@ -36,6 +66,7 @@ let board = []  // 20 rows with 10 columns each with a 1 or 0 to represent if th
 
 
 function resetBoard(){
+    generateBags()
     board = []
     for(i=0;i<20;i++){
         board.push("0000000000")
@@ -121,6 +152,29 @@ function checkRotateCollision(proposedShape, x, y){
     }
     return 0
 }
+//function checkCollisionSide(shape, x, y){
+//    for(let i=0;i<shape.length;i++){
+//        let squarex = x + shape[i][0]
+//        let squarey = shape[i][1]+y
+//       
+//        if(squarex > 8){
+//            return 1
+//        }
+//        if(squarex < 1){
+//            return -1
+//        }
+//        if(board[squarey][squarex-1] === "1"){
+//            return -1
+//        }
+//        if(board[squarey][squarex+1] === "1"){
+//            return 1
+//        }
+//       
+//    }
+//    return 0
+//
+//
+//}
 function checkCollisionSide(shape, x, y){
     for(let i=0;i<shape.length;i++){
         let squarex = x + shape[i][0]
@@ -373,9 +427,36 @@ function createShape(){
             board.unshift("0000000000")
         }
     }
+    let currBag = bagType? megaBag:splitBag
+    let upcoming = null
 
-    shapeIdx = Math.floor(Math.random()*allMinos.length)  //gets a random number within the suitable range for an index
-    let upcoming =  new tetromino(0, allMinos[shapeIdx], "blue", 0)
+    if(bagType){
+
+        if(currBag.length === 0){
+            generateBags()
+            return createShape()
+        }
+
+        shapeIdx = Math.floor(Math.random()*currBag.length)  //gets a random number within the suitable range for an index
+        upcoming =  new tetromino(0, currBag[shapeIdx], "blue", 0)
+        megaBag.splice(shapeIdx,1)
+    }
+    else{
+        
+        if(currBag[2].length === 0){
+            generateBags()
+            subBag = 0
+            return createShape()
+        }
+
+        if(currBag[subBag].length ===0){
+            subBag++
+        }
+        shapeIdx = Math.floor(Math.random()*currBag[subBag].length)
+        upcoming =  new tetromino(0, currBag[subBag][shapeIdx], "blue", 0)
+        splitBag[subBag].splice(shapeIdx,1)
+    }
+
     if(checkRotateCollision(upcoming.shape, upcoming.x, upcoming.y)){
         resetBoard()
     }
