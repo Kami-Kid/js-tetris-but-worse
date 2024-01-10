@@ -1,6 +1,8 @@
 const canvas = document.getElementById("Canvas")
 const context = canvas.getContext('2d');
 
+const allMinos = tetrominos.concat(pentominos).concat(oddBalls)
+
 const queueCanv = document.getElementById("queue")
 
 const queueContext = queueCanv.getContext('2d');
@@ -32,9 +34,15 @@ window.addEventListener("keyup", (e)=>{movementBuffer[e.key] = false; /*print(mo
 
 let board = []  // 20 rows with 10 columns each with a 1 or 0 to represent if there is a filled block there
 
-for(i=0;i<20;i++){
-    board.push("0000000000")
+
+function resetBoard(){
+    board = []
+    for(i=0;i<20;i++){
+        board.push("0000000000")
+    }
 }
+
+resetBoard()
 //board.push("1111111111")
 
 let currMino = null
@@ -78,7 +86,7 @@ function alignGrid(coordPair){ // expects [x,y]
 function sumArrs(a1,a2){ // assumes theyre the same size
     let result = []
     for(let i=0;i<a1.length;i++){
-        result.push(a1[i] + a2[i])
+        result.push(Number(a1[i]) + a2[i])
     }
     return result
 }
@@ -96,7 +104,46 @@ String.prototype.replaceAt = function (idx, value){
     return this.slice(0,idx) + value + this.slice(idx+1)
 }
 
+function checkRotateCollision(proposedShape, x, y){
+    // return true when collides
+    for(let i=0;i<proposedShape.length;i++){
+        let squarex = Number(proposedShape[i][0]) + Number(x)
+        let squarey = Number(proposedShape[i][1]) + Number(y)
+        if(squarex > 9 || squarex < 0){
+            return 1
+        }
+        if(squarey > 19){
+            return 1
+        }
+        if(board[squarey][squarex] == "1"){
+            return 1
+        }
+    }
+    return 0
+}
+function checkCollisionSide(shape, x, y){
+    for(let i=0;i<shape.length;i++){
+        let squarex = x + shape[i][0]
+        let squarey = shape[i][1]+y
+       
+        if(squarex > 8){
+            return 1
+        }
+        if(squarex < 1){
+            return -1
+        }
+        if(board[squarey][squarex-1] === "1"){
+            return -1
+        }
+        if(board[squarey][squarex+1] === "1"){
+            return 1
+        }
+       
+    }
+    return 0
 
+
+}
 
 class tetromino{
     constructor(x, shape, colour, y=20){
@@ -139,41 +186,44 @@ class tetromino{
     //                              1010
 
     rotateShape(clockwise){
-        let currShape = this.shape
-        let tempRaw = []
-        for(let i=0;i<this.shapeSize;i++){
-            tempRaw.push((new Array(this.shapeSize+1).join("0")))  // the joined array will make a string of length of shapesize and fill it with 0s
-        }
+        let currShape = JSON.parse(JSON.stringify(this.shape))
+        ///let tempRaw = []
+        ///for(let i=0;i<this.shapeSize;i++){
+        ///    tempRaw.push((new Array(this.shapeSize+1).join("0")))  // the joined array will make a string of length of shapesize and fill it with 0s
+        ///}
         for(let i=0; i<currShape.length;i++){
             let focalPoint = (this.shapeSize - 1)/2  // this can be used for both x and y since its symetric
             let block = sumArrs(currShape[i], [-focalPoint,-focalPoint])
             
 
             currShape[i] = !clockwise? sumArrs([-block[1], block[0]],[focalPoint,focalPoint]) : sumArrs([block[1], -block[0]],[focalPoint,focalPoint])
-            tempRaw[currShape[i][1]] = tempRaw[currShape[i][1]].replaceAt(currShape[i][0],"1")
+            //tempRaw[currShape[i][1]] = tempRaw[currShape[i][1]].replaceAt(currShape[i][0],"1")
         }
-        this.shape = currShape
-        if(this.checkRotateCollision()){
-            this.rotateShape(!clockwise)
+        if(!checkRotateCollision(currShape, this.x,this.y)){
+            this.shape = currShape
         }
        
     }
 
-    checkRotateCollision(){
-        // return true when collides
-        for(let i=0;i<this.shape.length;i++){
-            let square = sumArrs(this.shape[i],[this.x,this.y])
-            if(square[0] > 10 || square[0] < 0){
-                return 1
-            }
-            if(board[square[1]][square[0]] == "1"){
-                return 1
-            }
-            if(square[1] > 20){
-                return 1
-            }
-        }
-    }
+    
+
+    //checkRotateCollision(proposedShape){
+    //    // return true when collides
+    //    for(let i=0;i<proposedShape.length;i++){
+    //        let squarex = Number(proposedShape[i][0]) + Number(this.x)
+    //        let squarey = Number(proposedShape[i][1]) + Number(this.y)
+    //        if(squarex > 9 || squarex < 0){
+    //            return 1
+    //        }
+    //        if(squarey > 20){
+    //            return 1
+    //        }
+    //        if(board[squarey][squarex] == "1"){
+    //            return 1
+    //        }
+    //    }
+    //    return 0
+    //}
 
     drawSquare(square){
         let aligned = alignGrid(square)
@@ -214,28 +264,6 @@ class tetromino{
         }
         this.y += 1
     }
-    checkCollisionSide(){
-        for(let i=0;i<this.shape.length;i++){
-            let squarex = this.x + this.shape[i][0]+1
-            let squarey = this.shape[i][1]+this.y
-           
-            if(squarex >= 10){
-                return 1
-            }
-            if(squarex <= 1){
-                return -1
-            }
-            if(board[squarey][squarex-2] === "1"){
-                return -1
-            }
-            if(board[squarey][squarex] === "1"){
-                return 1
-            }
-           
-        }
-        return 0
-
-    }
 
     parseInput(){
         if (movementBuffer["ArrowRight"]){
@@ -245,7 +273,7 @@ class tetromino{
             this.rotateShape(true)
         }
         if(movementBuffer["d"]){
-            if(this.checkCollisionSide() !== 1){
+            if(checkCollisionSide(this.shape,this.x, this.y) !== 1){
                 this.x += 1
             }
         }
@@ -253,7 +281,7 @@ class tetromino{
 
             print("a")
            
-            if(this.checkCollisionSide() !== -1){
+            if(checkCollisionSide(this.shape,this.x,this.y) !== -1){
                 this.x -= 1
             }
            
@@ -346,8 +374,12 @@ function createShape(){
         }
     }
 
-    shapeIdx = Math.floor(Math.random()*tetrominos.length)  //gets a random number within the suitable range for an index
-    return new tetromino(5, tetrominos[shapeIdx], "blue", 0)
+    shapeIdx = Math.floor(Math.random()*allMinos.length)  //gets a random number within the suitable range for an index
+    let upcoming =  new tetromino(0, allMinos[shapeIdx], "blue", 0)
+    if(checkRotateCollision(upcoming.shape, upcoming.x, upcoming.y)){
+        resetBoard()
+    }
+    return upcoming
 }
 
 function run(){
