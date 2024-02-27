@@ -22,19 +22,54 @@
             div{
                 width: 500px;
             }
+            button{
+                bottom: 50%;
+                left: 25%;
+                position: absolute;
+            }
+            input{
+                display: none;
+            }
+
+            span{
+                
+                top: 10%;
+                left: 25%;
+                position: absolute;
+            }
+
+            pre{
+                top: 10%;
+                left: 0%;
+                display: block;
+                position: inherit;
+            }
+
         </style>
         <title>Tetris</title>
     </head>
     <body>
         <Canvas id="Canvas"></Canvas>
-        <Canvas id="queue"></Canvas>
+        <!-- <Canvas id="queue"></Canvas> -->
         <br>
         <div>
-        <input type="range" min="0" max="2000" value="83" id="feedback">
+        <input type="range" min="0" max="2000" value="166" id="feedback">
+
+        <span>
+            <pre>
+            A - move left
+            D - move right
+            S - soft drop
+            Space - hard drop
+            Left Arrow - rotate left
+            Right Arrow - rotate right
+
+            </pre>
+        </span>
         </div>
-        <h1 id="currKey"></h1>
-        <button id="bagMaking" onclick="bagTypeBuffer=!bagTypeBuffer; this.innerHTML = ['Mega Bag or Split Bags : ',bagTypeBuffer?'Mega':'Split'].join('');">Mega Bag or Split Bags : Split</button>
-        <script src="minos.js"></script>
-        <script src="main.js"></script>
+        <!-- <h1 id="currKey"></h1> -->
+        <button id="bagMaking" onclick="bagTypeBuffer=!bagTypeBuffer; this.innerHTML = ['Normal Bag or Extended Bag : ',bagTypeBuffer?'Normal':'Extended'].join('');">Normal Bag or Extended Bag : Normal</button>
+        <script src="minos"></script>
+        <script src="main"></script>
     </body>
 </html>
